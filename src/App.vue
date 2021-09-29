@@ -1,6 +1,7 @@
 <template>
   <div class="container mx-auto flex flex-col items-center bg-gray-100 p-4">
-    <div v-if="firstFetch" class="fixed w-100 h-100 opacity-80 bg-purple-800 inset-0 z-50 flex items-center justify-center">
+    <div v-if="firstFetch"
+         class="fixed w-100 h-100 opacity-80 bg-purple-800 inset-0 z-50 flex items-center justify-center">
       <svg class="animate-spin -ml-1 mr-3 h-12 w-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
            viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -25,11 +26,12 @@
                   placeholder="Например DOGE"
               />
             </div>
-            <div v-if="massOfTikers.length !== 0" class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap">
-            <span v-for="element of massOfTikers"
+            <div v-if="promptForTikets.length !== 0" class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap">
+            <span v-for="element of promptForTikets"
                   :key="element.id"
+                  @click="add(element.symbol)"
                   class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer">
-              {{ element.name }}
+              {{ element.symbol }}
             </span>
             </div>
             <div class="text-sm text-red-600">{{ errorValue }}</div>
@@ -153,20 +155,25 @@ export default {
       currentElement: null,
       graph: [],
       coinList: [],
-      firstFetch: true
+      firstFetch: true,
+      promptForTikets: []
     }
+  },
+  watch: {
+    ticket: 'updateMassOfTikets'
   },
   methods: {
 
-    add() {
+    add(tiketName = '') {
       if (this.ticket === '') {
         this.errorValue = 'Введите название тикета';
         return
       }
+      const tiketNameStr = tiketName ? tiketName : this.ticket;
       this.errorValue = '';
       let newTicker = {
         id: this.massOfTikers.length + 1,
-        name: this.ticket,
+        name: tiketNameStr,
         price: 0
       };
       this.massOfTikers.push(newTicker);
@@ -182,6 +189,7 @@ export default {
       }, 5000);
 
       this.ticket = '';
+      this.promptForTikets = [];
     },
 
     deleteTicker(key) {
@@ -209,7 +217,7 @@ export default {
     async getAvaliableCoinList() {
       const f = await fetch('https://min-api.cryptocompare.com/data/blockchain/list?api_key=89dea0a16cdcafec09b2b4e1f829e7cef15085dfa81f0b6c04cf5baf44e3460f');
       const response = await f.json();
-      for (let key in response.Data){
+      for (let key in response.Data) {
         let newTicket = {
           id: response.Data[key]['id'],
           symbol: response.Data[key]['symbol'],
@@ -218,6 +226,14 @@ export default {
         this.coinList.push(newTicket)
       }
       this.firstFetch = false;
+    },
+
+    updateMassOfTikets() {
+      if (this.ticket === '') {
+        this.promptForTikets = [];
+      } else {
+        this.promptForTikets = this.coinList.filter(item => item.symbol.toUpperCase().startsWith(this.ticket.toUpperCase())).slice(0, 4);
+      }
     }
 
   },
